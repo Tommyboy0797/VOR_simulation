@@ -1,28 +1,22 @@
-# CMakeLists.txt — Windows x64 build
-cmake_minimum_required(VERSION 3.20)
-project(TOMMY LANGUAGES CXX)
+cmake_minimum_required(VERSION 3.28)
+project(VOR_simulation LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
-# Set the build type to Release for optimizations
-set(CMAKE_BUILD_TYPE Release)
+# Fetch SFML 3.0 from GitHub
+include(FetchContent)
+FetchContent_Declare(SFML
+    GIT_REPOSITORY https://github.com/SFML/SFML.git
+    GIT_TAG 3.0.1
+    GIT_SHALLOW ON
+    EXCLUDE_FROM_ALL
+    SYSTEM)
+FetchContent_MakeAvailable(SFML)
 
-if(MSVC)
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /O2 /DNDEBUG")
-else()
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -DNDEBUG")
-endif()
+# Add the executable and compile features
+add_executable(VORSIM main.cpp)  # Update this if your main.cpp is elsewhere
+set_target_properties(VORSIM PROPERTIES LINK_FLAGS "/SUBSYSTEM:WINDOWS")
+target_compile_features(VORSIM PRIVATE cxx_std_17)
 
-add_executable(VORSIM main.cpp)
-
-
-# # If you have other folders with .h files in them, add those here
-# target_include_directories(${PROJECT_NAME} PUBLIC
-#     # ${CMAKE_CURRENT_SOURCE_DIR}/include
-# )
-
-# target_compile_definitions(${PROJECT_NAME} PRIVATE
-#     _USE_MATH_DEFINES
-#     _CRT_SECURE_NO_WARNINGS
-# )
+# Link the SFML graphics, window, and system modules
+target_link_libraries(VORSIM PRIVATE SFML::Graphics SFML::Window SFML::System)

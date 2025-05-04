@@ -5,7 +5,7 @@
 #include <cmath>
 using namespace std;
 
-int AIRCRAFT_HEADING = 0;
+int AIRCRAFT_HEADING = 180;
 float AIRCRAFT_LAT = 51.4700;
 float AIRCRAFT_LNG = -0.4543;
 
@@ -44,9 +44,23 @@ float get_bearing(float lat1, float lng1, float lat2, float lng2, int hdg){
     return result;
 }
 
+float get_turn_angle(float bearing, float heading){
+
+    float turn_amount = bearing - heading;
+
+    if (turn_amount > 180){ // rationalise the result
+        turn_amount -= 360;
+    } else if (turn_amount < -180) {
+        turn_amount += 360;
+    }
+
+    return turn_amount;
+}
+
 int main(){
     
-    cout << get_bearing(AIRCRAFT_LAT, AIRCRAFT_LNG, VOR_LAT, VOR_LNG, AIRCRAFT_HEADING);
+    cout << get_bearing(AIRCRAFT_LAT, AIRCRAFT_LNG, VOR_LAT, VOR_LNG, AIRCRAFT_HEADING) << "\n";
+    cout << "For present heading you must turn: " << get_turn_angle(get_bearing(AIRCRAFT_LAT, AIRCRAFT_LNG, VOR_LAT, VOR_LNG, AIRCRAFT_HEADING), AIRCRAFT_HEADING) << " degrees!" << endl;
 
     return 0;
 }

@@ -20,3 +20,10 @@ target_compile_features(VORSIM PRIVATE cxx_std_17)
 
 # Link the SFML graphics, window, and system modules
 target_link_libraries(VORSIM PRIVATE SFML::Graphics SFML::Window SFML::System)
+
+# Add post-build step to copy the assets (e.g., ui_resources folder)
+add_custom_command(TARGET VORSIM POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_SOURCE_DIR}/ui_resources
+        ${CMAKE_BINARY_DIR}/bin/Release/ui_resources
+)

@@ -28,7 +28,7 @@ float get_degrees(float radians){
     return degrees;
 }
 
-float get_bearing(float lat1, float lng1, float lat2, float lng2, int hdg){
+int get_bearing(float lat1, float lng1, float lat2, float lng2, int hdg){
 
     lat1 = get_radians(lat1); // convert lat and lngs to radians 
     lat2 = get_radians(lat2);
@@ -43,10 +43,10 @@ float get_bearing(float lat1, float lng1, float lat2, float lng2, int hdg){
 
     if (result < 0) result += 360.0f; // rationalise the result, if its a minus, add 360 to make it positive
 
-    return result;
+    return round(result); // round result to a whole number
 }
 
-float get_turn_angle(float bearing, float heading){
+int get_turn_angle(float bearing, float heading){
 
     float turn_amount = bearing - heading;
 
@@ -56,7 +56,7 @@ float get_turn_angle(float bearing, float heading){
         turn_amount += 360;
     }
 
-    return turn_amount;
+    return round(turn_amount); // round result
 }
 
 int WinMain(){
@@ -87,13 +87,58 @@ int WinMain(){
     turn_angle.setFillColor(sf::Color::Black);
     turn_angle.setPosition(sf::Vector2f(5.f, 60.f));
 
+    sf::RectangleShape hdg_left_btn(sf::Vector2f(20,20));
+    hdg_left_btn.setPosition(sf::Vector2f(110.f, 23.f));
+    hdg_left_btn.setFillColor(sf::Color::Black);
+    sf::Text hdg_left_text(font, "<", 21);
+    hdg_left_text.setFillColor(sf::Color::White);
+    hdg_left_text.setPosition(sf::Vector2f(113.f, 20.f));
+
+    sf::RectangleShape hdg_right_btn(sf::Vector2f(20,20));
+    hdg_right_btn.setPosition(sf::Vector2f(135.f, 23.f));
+    hdg_right_btn.setFillColor(sf::Color::Black);
+    sf::Text hdg_right_text(font, ">", 21);
+    hdg_right_text.setFillColor(sf::Color::White);
+    hdg_right_text.setPosition(sf::Vector2f(138.f, 20.f));
+
+
+
     while (window.isOpen())
     {
         while (const std::optional event = window.pollEvent())
         {
-            if (event->is<sf::Event::Closed>())
-            {
+            if (event->is<sf::Event::Closed>()){
                 window.close();
+            }
+
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Left)){ // if the user presses the left arrow
+
+                AIRCRAFT_HEADING = AIRCRAFT_HEADING - 1; // decrease the heading
+
+                if (AIRCRAFT_HEADING == 0){ // if the heading is 0, reset to 360 to avoid going negative
+                    AIRCRAFT_HEADING = 360;
+                }
+
+                current_heading.setString("HDG: " + to_string(AIRCRAFT_HEADING) + "\260"); // update current heading value.
+                turn_angle.setString("Turn: " + std::to_string(get_turn_angle(get_bearing(AIRCRAFT_LAT, AIRCRAFT_LNG, VOR_LAT, VOR_LNG, AIRCRAFT_HEADING), AIRCRAFT_HEADING)) + "\260"); // update the turn direction
+                hdg_left_text.setFillColor(sf::Color::Red); // when the button is pressed, set the arrow icon thing to red, to show that its being used
+            } else {
+                hdg_left_text.setFillColor(sf::Color::White); // reset to white when not pressed
+            }
+
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Right)){ // if the user presses the left arrow
+
+                AIRCRAFT_HEADING = AIRCRAFT_HEADING + 1; // increase the heading
+
+                if (AIRCRAFT_HEADING >= 360){ // if the heading is 360 or above, reset to 0 to avoid going too high like 380 degrees
+                    AIRCRAFT_HEADING = 0;
+                }
+
+                current_heading.setString("HDG: " + to_string(AIRCRAFT_HEADING) + "\260"); // update current heading value.
+                turn_angle.setString("Turn: " + std::to_string(get_turn_angle(get_bearing(AIRCRAFT_LAT, AIRCRAFT_LNG, VOR_LAT, VOR_LNG, AIRCRAFT_HEADING), AIRCRAFT_HEADING)) + "\260"); // update the turn direction
+                hdg_right_text.setFillColor(sf::Color::Red); // when the button is pressed, set the arrow icon thing to red, to show that its being used
+            } else {
+                hdg_right_text.setFillColor(sf::Color::White); // reset to white when not pressed
             }
         }
 
@@ -103,6 +148,10 @@ int WinMain(){
         window.draw(current_heading);
         window.draw(reqd_bearing);
         window.draw(turn_angle);
+        window.draw(hdg_left_btn);
+        window.draw(hdg_left_text);
+        window.draw(hdg_right_btn);
+        window.draw(hdg_right_text);
 
         window.display(); 
     }

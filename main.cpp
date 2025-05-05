@@ -20,7 +20,6 @@ float get_radians(float degrees){ // convert degrees to radians
 
     return radians;
 }
-
 float get_degrees(float radians){
     
     float degrees = radians * (180 / 3.14159);
@@ -101,10 +100,35 @@ int WinMain(){
     hdg_right_text.setFillColor(sf::Color::White);
     hdg_right_text.setPosition(sf::Vector2f(138.f, 20.f));
 
+    sf::CircleShape compass(250.f);
+    compass.setFillColor(sf::Color::Transparent);
+    compass.setOutlineThickness(5.f);
+    compass.setOutlineColor(sf::Color::Black);
+    compass.setPosition(sf::Vector2f(150.f, 75.f));
+    float compass_radius = 250.f;
 
+    sf::CircleShape heading_arrow(20.f, 3);
+    heading_arrow.setFillColor(sf::Color::Black);
+    heading_arrow.setPosition(sf::Vector2f(378.f, 95.f));
 
-    while (window.isOpen())
-    {
+    sf::Vector2f center(400.f, 325.f);
+    float radius = 250.f;
+    const int numMarks = 36;   // one every 10 degrees
+    const std::size_t vertexCount = numMarks * 2;
+
+    sf::VertexArray compassMarks(sf::PrimitiveType::Lines, vertexCount);
+
+    for (int i = 0; i < numMarks; ++i) {
+        float angle = i * 360.f / numMarks * (3.14159265f / 180.f);
+        sf::Vector2f p1 = center + sf::Vector2f(std::cos(angle)*(radius-10), std::sin(angle)*(radius-10));
+        sf::Vector2f p2 = center + sf::Vector2f(std::cos(angle)*radius, std::sin(angle)*radius);
+        compassMarks[i*2 + 0].position = p1;
+        compassMarks[i*2 + 1].position = p2;
+        compassMarks[i*2 + 0].color = sf::Color::Black;
+        compassMarks[i*2 + 1].color = sf::Color::Black;
+    }
+
+    while (window.isOpen()){
         while (const std::optional event = window.pollEvent())
         {
             if (event->is<sf::Event::Closed>()){
@@ -152,13 +176,13 @@ int WinMain(){
         window.draw(hdg_left_text);
         window.draw(hdg_right_btn);
         window.draw(hdg_right_text);
+        window.draw(compass);
+        window.draw(heading_arrow);
+        window.draw(compassMarks);
+
 
         window.display(); 
     }
-
-
-    cout << get_bearing(AIRCRAFT_LAT, AIRCRAFT_LNG, VOR_LAT, VOR_LNG, AIRCRAFT_HEADING) << "\n";
-    cout << "For present heading you must turn: " << get_turn_angle(get_bearing(AIRCRAFT_LAT, AIRCRAFT_LNG, VOR_LAT, VOR_LNG, AIRCRAFT_HEADING), AIRCRAFT_HEADING) << " degrees!" << endl;
 
     return 0;
 }

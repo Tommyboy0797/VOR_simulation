@@ -10,7 +10,8 @@ FetchContent_Declare(SFML
     GIT_TAG 3.0.1
     GIT_SHALLOW ON
     EXCLUDE_FROM_ALL
-    SYSTEM)
+    SYSTEM
+    GRAPHICS)
 FetchContent_MakeAvailable(SFML)
 
 # Add the executable and compile features

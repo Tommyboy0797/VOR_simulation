@@ -5,6 +5,7 @@
 #include <cmath>
 #include <SFML/Graphics.hpp>
 #include <SFML/Window.hpp>
+#include <corecrt_math_defines.h>
 using namespace std;
 
 int AIRCRAFT_HEADING = 180;
@@ -118,7 +119,7 @@ int WinMain(){
 
     sf::VertexArray compassMarks(sf::PrimitiveType::Lines, vertexCount);
 
-    for (int i = 0; i < numMarks; ++i) {
+    for (int i = 0; i < numMarks; ++i) { // add the ticks onto the compass, better than doing it by hand!
         float angle = i * 360.f / numMarks * (3.14159265f / 180.f);
         sf::Vector2f p1 = center + sf::Vector2f(std::cos(angle)*(radius-10), std::sin(angle)*(radius-10));
         sf::Vector2f p2 = center + sf::Vector2f(std::cos(angle)*radius, std::sin(angle)*radius);
@@ -126,6 +127,37 @@ int WinMain(){
         compassMarks[i*2 + 1].position = p2;
         compassMarks[i*2 + 0].color = sf::Color::Black;
         compassMarks[i*2 + 1].color = sf::Color::Black;
+    }
+     
+    std::vector<sf::Text> cardinalLabels;
+    cardinalLabels.reserve(4);
+
+    const std::vector<std::pair<float, std::string>> cardinals = {{
+        {   0.f, "N" },
+        {  90.f, "E" },
+        { 180.f, "S" },
+        { 270.f, "W" }
+    }};
+
+    for (auto& [deg, labelStr] : cardinals)
+    {
+        sf::Text label(font, labelStr, 18);
+        label.setFillColor(sf::Color::Black);
+
+        sf::FloatRect lb = label.getLocalBounds();
+        label.setOrigin({
+            lb.position.x + lb.size.x / 2.f,
+            lb.position.y + lb.size.y / 2.f
+        });
+
+        float rad = get_radians(deg);
+        float dist = radius - 20.f;
+        label.setPosition({
+            center.x + std::cos(rad) * dist,
+            center.y + std::sin(rad) * dist
+        });
+
+        cardinalLabels.push_back(label);
     }
 
     while (window.isOpen()){
@@ -146,6 +178,7 @@ int WinMain(){
                 current_heading.setString("HDG: " + to_string(AIRCRAFT_HEADING) + "\260"); // update current heading value.
                 turn_angle.setString("Turn: " + std::to_string(get_turn_angle(get_bearing(AIRCRAFT_LAT, AIRCRAFT_LNG, VOR_LAT, VOR_LNG, AIRCRAFT_HEADING), AIRCRAFT_HEADING)) + "\260"); // update the turn direction
                 hdg_left_text.setFillColor(sf::Color::Red); // when the button is pressed, set the arrow icon thing to red, to show that its being used
+                compass.rotate(sf::degrees(-1.f));
             } else {
                 hdg_left_text.setFillColor(sf::Color::White); // reset to white when not pressed
             }
@@ -179,6 +212,8 @@ int WinMain(){
         window.draw(compass);
         window.draw(heading_arrow);
         window.draw(compassMarks);
+        for (auto& lbl : cardinalLabels)
+            window.draw(lbl);
 
 
         window.display(); 

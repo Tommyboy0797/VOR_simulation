@@ -8,7 +8,7 @@
 #include <corecrt_math_defines.h>
 using namespace std;
 
-int AIRCRAFT_HEADING = 180;
+int AIRCRAFT_HEADING = 0; // default to north so the labels position correctly
 float AIRCRAFT_LAT = 51.4700;
 float AIRCRAFT_LNG = -0.4543;
 
@@ -105,8 +105,9 @@ int WinMain(){
     compass.setFillColor(sf::Color::Transparent);
     compass.setOutlineThickness(5.f);
     compass.setOutlineColor(sf::Color::Black);
-    compass.setPosition(sf::Vector2f(150.f, 75.f));
     float compass_radius = 250.f;
+    compass.setOrigin({compass_radius, compass_radius});
+    compass.setPosition(sf::Vector2f(400.f, 325.f));
 
     sf::CircleShape heading_arrow(20.f, 3);
     heading_arrow.setFillColor(sf::Color::Black);
@@ -128,7 +129,7 @@ int WinMain(){
         compassMarks[i*2 + 0].color = sf::Color::Black;
         compassMarks[i*2 + 1].color = sf::Color::Black;
     }
-     
+ 
     std::vector<sf::Text> cardinalLabels;
     cardinalLabels.reserve(4);
 
@@ -156,7 +157,7 @@ int WinMain(){
             center.x + std::cos(rad) * dist,
             center.y + std::sin(rad) * dist
         });
-
+        label.setOrigin({compass_radius, compass_radius});
         cardinalLabels.push_back(label);
     }
 
@@ -179,6 +180,10 @@ int WinMain(){
                 turn_angle.setString("Turn: " + std::to_string(get_turn_angle(get_bearing(AIRCRAFT_LAT, AIRCRAFT_LNG, VOR_LAT, VOR_LNG, AIRCRAFT_HEADING), AIRCRAFT_HEADING)) + "\260"); // update the turn direction
                 hdg_left_text.setFillColor(sf::Color::Red); // when the button is pressed, set the arrow icon thing to red, to show that its being used
                 compass.rotate(sf::degrees(-1.f));
+                for (int i = 0; i < cardinalLabels.size(); i++){
+                    cardinalLabels[i].rotate(sf::degrees(-1.f));
+                }
+
             } else {
                 hdg_left_text.setFillColor(sf::Color::White); // reset to white when not pressed
             }
@@ -221,3 +226,18 @@ int WinMain(){
 
     return 0;
 }
+
+sf::Vector2f rotatePoint(const sf::Vector2f& p, 
+    const sf::Vector2f& pivot, 
+    float angleDegrees){
+    float rad = angleDegrees * (3.14159265f / 180.f);
+    float s = std::sin(rad), c = std::cos(rad);
+    // translate to origin
+    sf::Vector2f t = p - pivot;
+    // rotate
+    sf::Vector2f r{ t.x * c - t.y * s,
+       t.x * s + t.y * c };
+    // translate back
+    return r + pivot;
+    }
+ 

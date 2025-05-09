@@ -113,6 +113,10 @@ int WinMain(){
     heading_arrow.setFillColor(sf::Color::Black);
     heading_arrow.setPosition(sf::Vector2f(378.f, 95.f));
 
+    sf::RenderTexture compass_texture({800,800});
+    compass_texture.clear(sf::Color::Transparent);
+    compass_texture.draw(compass);
+
     sf::Vector2f center(400.f, 325.f);
     float radius = 250.f;
     const int numMarks = 36;   // one every 10 degrees
@@ -129,6 +133,7 @@ int WinMain(){
         compassMarks[i*2 + 0].color = sf::Color::Black;
         compassMarks[i*2 + 1].color = sf::Color::Black;
     }
+    compass_texture.draw(compassMarks);
  
     std::vector<sf::Text> cardinalLabels;
     cardinalLabels.reserve(4);
@@ -152,37 +157,46 @@ int WinMain(){
         });
 
         float rad = get_radians(deg);
-        float dist = radius - 20.f;
+        float dist = radius;
         label.setPosition({
             center.x + std::cos(rad) * dist,
             center.y + std::sin(rad) * dist
         });
         label.setOrigin({compass_radius, compass_radius});
         cardinalLabels.push_back(label);
+        compass_texture.draw(label);
     }
 
+    compass_texture.draw(compassMarks);
+    
+    compass_texture.display();
+    sf::Sprite compassSprite(compass_texture.getTexture());
+    compassSprite.setOrigin({compass_radius, compass_radius});
+    compassSprite.setPosition(sf::Vector2f(800 / 2.f, 600 / 2.f));
+    
     while (window.isOpen()){
         while (const std::optional event = window.pollEvent())
         {
             if (event->is<sf::Event::Closed>()){
                 window.close();
             }
+            
+            if (AIRCRAFT_HEADING >= 360){ // if the heading is 360 or above, reset to 0 to avoid going too high like 380 degrees
+                AIRCRAFT_HEADING = 0;
+            }
 
+            if (AIRCRAFT_HEADING <= 0){ 
+                AIRCRAFT_HEADING = 360;
+            }
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Left)){ // if the user presses the left arrow
 
                 AIRCRAFT_HEADING = AIRCRAFT_HEADING - 1; // decrease the heading
 
-                if (AIRCRAFT_HEADING == 0){ // if the heading is 0, reset to 360 to avoid going negative
-                    AIRCRAFT_HEADING = 360;
-                }
-
                 current_heading.setString("HDG: " + to_string(AIRCRAFT_HEADING) + "\260"); // update current heading value.
                 turn_angle.setString("Turn: " + std::to_string(get_turn_angle(get_bearing(AIRCRAFT_LAT, AIRCRAFT_LNG, VOR_LAT, VOR_LNG, AIRCRAFT_HEADING), AIRCRAFT_HEADING)) + "\260"); // update the turn direction
                 hdg_left_text.setFillColor(sf::Color::Red); // when the button is pressed, set the arrow icon thing to red, to show that its being used
-                compass.rotate(sf::degrees(-1.f));
-                for (int i = 0; i < cardinalLabels.size(); i++){
-                    cardinalLabels[i].rotate(sf::degrees(-1.f));
-                }
+                compassSprite.setRotation(sf::degrees(AIRCRAFT_HEADING));
+
 
             } else {
                 hdg_left_text.setFillColor(sf::Color::White); // reset to white when not pressed
@@ -190,18 +204,19 @@ int WinMain(){
 
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Right)){ // if the user presses the left arrow
 
-                AIRCRAFT_HEADING = AIRCRAFT_HEADING + 1; // increase the heading
-
-                if (AIRCRAFT_HEADING >= 360){ // if the heading is 360 or above, reset to 0 to avoid going too high like 380 degrees
+                if (AIRCRAFT_HEADING == 360){ // if the heading is 360 or above, reset to 0 to avoid going too high like 380 degrees
                     AIRCRAFT_HEADING = 0;
                 }
+                AIRCRAFT_HEADING = AIRCRAFT_HEADING + 1; // increase the heading
 
                 current_heading.setString("HDG: " + to_string(AIRCRAFT_HEADING) + "\260"); // update current heading value.
                 turn_angle.setString("Turn: " + std::to_string(get_turn_angle(get_bearing(AIRCRAFT_LAT, AIRCRAFT_LNG, VOR_LAT, VOR_LNG, AIRCRAFT_HEADING), AIRCRAFT_HEADING)) + "\260"); // update the turn direction
                 hdg_right_text.setFillColor(sf::Color::Red); // when the button is pressed, set the arrow icon thing to red, to show that its being used
+                compassSprite.setRotation(sf::degrees(AIRCRAFT_HEADING));
             } else {
                 hdg_right_text.setFillColor(sf::Color::White); // reset to white when not pressed
             }
+
         }
 
         window.clear(sf::Color::White); // set bg colour to white
@@ -214,11 +229,8 @@ int WinMain(){
         window.draw(hdg_left_text);
         window.draw(hdg_right_btn);
         window.draw(hdg_right_text);
-        window.draw(compass);
         window.draw(heading_arrow);
-        window.draw(compassMarks);
-        for (auto& lbl : cardinalLabels)
-            window.draw(lbl);
+        window.draw(compassSprite);
 
 
         window.display(); 
@@ -226,18 +238,3 @@ int WinMain(){
 
     return 0;
 }
-
-sf::Vector2f rotatePoint(const sf::Vector2f& p, 
-    const sf::Vector2f& pivot, 
-    float angleDegrees){
-    float rad = angleDegrees * (3.14159265f / 180.f);
-    float s = std::sin(rad), c = std::cos(rad);
-    // translate to origin
-    sf::Vector2f t = p - pivot;
-    // rotate
-    sf::Vector2f r{ t.x * c - t.y * s,
-       t.x * s + t.y * c };
-    // translate back
-    return r + pivot;
-    }
- 

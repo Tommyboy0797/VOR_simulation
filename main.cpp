@@ -106,18 +106,18 @@ int WinMain(){
     compass.setOutlineThickness(5.f);
     compass.setOutlineColor(sf::Color::Black);
     float compass_radius = 250.f;
+    compass.setPosition({window.getSize().x / 2.f, window.getSize().y / 2.f});
     compass.setOrigin({compass_radius, compass_radius});
-    compass.setPosition(sf::Vector2f(400.f, 325.f));
 
     sf::CircleShape heading_arrow(20.f, 3);
     heading_arrow.setFillColor(sf::Color::Black);
     heading_arrow.setPosition(sf::Vector2f(378.f, 95.f));
 
-    sf::RenderTexture compass_texture({800,800});
+    sf::RenderTexture compass_texture({800,600});
     compass_texture.clear(sf::Color::Transparent);
     compass_texture.draw(compass);
 
-    sf::Vector2f center(400.f, 325.f);
+    sf::Vector2f center({window.getSize().x / 2.f, window.getSize().y / 2.f});
     float radius = 250.f;
     const int numMarks = 36;   // one every 10 degrees
     const std::size_t vertexCount = numMarks * 2;
@@ -139,10 +139,10 @@ int WinMain(){
     cardinalLabels.reserve(4);
 
     const std::vector<std::pair<float, std::string>> cardinals = {{
-        {   0.f, "N" },
-        {  90.f, "E" },
-        { 180.f, "S" },
-        { 270.f, "W" }
+        {   0.f, "E" },
+        {  90.f, "S" },
+        { 180.f, "W" },
+        { 270.f, "N" }
     }};
 
     for (auto& [deg, labelStr] : cardinals)
@@ -162,7 +162,7 @@ int WinMain(){
             center.x + std::cos(rad) * dist,
             center.y + std::sin(rad) * dist
         });
-        label.setOrigin({compass_radius, compass_radius});
+
         cardinalLabels.push_back(label);
         compass_texture.draw(label);
     }
@@ -171,8 +171,8 @@ int WinMain(){
     
     compass_texture.display();
     sf::Sprite compassSprite(compass_texture.getTexture());
-    compassSprite.setOrigin({compass_radius, compass_radius});
-    compassSprite.setPosition(sf::Vector2f(800 / 2.f, 600 / 2.f));
+    compassSprite.setPosition(compass.getPosition());
+    compassSprite.setOrigin({compass_texture.getSize().x / 2.f, compass_texture.getSize().y / 2.f});
     
     while (window.isOpen()){
         while (const std::optional event = window.pollEvent())
@@ -188,21 +188,21 @@ int WinMain(){
             if (AIRCRAFT_HEADING <= 0){ 
                 AIRCRAFT_HEADING = 360;
             }
-            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Left)){ // if the user presses the left arrow
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Right)){ // if the user presses the left arrow
 
                 AIRCRAFT_HEADING = AIRCRAFT_HEADING - 1; // decrease the heading
 
                 current_heading.setString("HDG: " + to_string(AIRCRAFT_HEADING) + "\260"); // update current heading value.
                 turn_angle.setString("Turn: " + std::to_string(get_turn_angle(get_bearing(AIRCRAFT_LAT, AIRCRAFT_LNG, VOR_LAT, VOR_LNG, AIRCRAFT_HEADING), AIRCRAFT_HEADING)) + "\260"); // update the turn direction
                 hdg_left_text.setFillColor(sf::Color::Red); // when the button is pressed, set the arrow icon thing to red, to show that its being used
-                compassSprite.setRotation(sf::degrees(AIRCRAFT_HEADING));
+                compassSprite.rotate(sf::degrees(+1.f));
 
 
             } else {
                 hdg_left_text.setFillColor(sf::Color::White); // reset to white when not pressed
             }
 
-            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Right)){ // if the user presses the left arrow
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Left)){ // if the user presses the left arrow
 
                 if (AIRCRAFT_HEADING == 360){ // if the heading is 360 or above, reset to 0 to avoid going too high like 380 degrees
                     AIRCRAFT_HEADING = 0;
@@ -212,7 +212,7 @@ int WinMain(){
                 current_heading.setString("HDG: " + to_string(AIRCRAFT_HEADING) + "\260"); // update current heading value.
                 turn_angle.setString("Turn: " + std::to_string(get_turn_angle(get_bearing(AIRCRAFT_LAT, AIRCRAFT_LNG, VOR_LAT, VOR_LNG, AIRCRAFT_HEADING), AIRCRAFT_HEADING)) + "\260"); // update the turn direction
                 hdg_right_text.setFillColor(sf::Color::Red); // when the button is pressed, set the arrow icon thing to red, to show that its being used
-                compassSprite.setRotation(sf::degrees(AIRCRAFT_HEADING));
+                compassSprite.rotate(sf::degrees(-1.f));;
             } else {
                 hdg_right_text.setFillColor(sf::Color::White); // reset to white when not pressed
             }

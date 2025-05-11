@@ -75,6 +75,8 @@ int WinMain(){
     float topMargin  = 10.f;  
     text.setPosition({ windowMidX, topMargin });
 
+    sf::Vector2f center({window.getSize().x / 2.f, window.getSize().y / 2.f});
+
     sf::Text current_heading(font, "HDG: " + to_string(AIRCRAFT_HEADING) + "\260", 20); // use ascii value for the degrees symbol
     current_heading.setFillColor(sf::Color::Black);
     current_heading.setPosition(sf::Vector2f(5.f, 20.f)); // Vector2f == "vector to float"
@@ -111,13 +113,33 @@ int WinMain(){
 
     sf::CircleShape heading_arrow(20.f, 3);
     heading_arrow.setFillColor(sf::Color::Black);
-    heading_arrow.setPosition(sf::Vector2f(378.f, 95.f));
+    heading_arrow.setPosition(sf::Vector2f(378.f, 85.f));
 
     sf::RenderTexture compass_texture({800,600});
     compass_texture.clear(sf::Color::Transparent);
     compass_texture.draw(compass);
+    compass_texture.setSmooth(true);
 
-    sf::Vector2f center({window.getSize().x / 2.f, window.getSize().y / 2.f});
+    sf::Texture heading_bug;
+    if (!heading_bug.loadFromFile("ui_resources/headingbug.png")) {
+        cerr << "Error loading headingbug.png" << endl;
+        return -1;
+    }
+    sf::Sprite hdg_bug(heading_bug);
+    hdg_bug.setScale({0.09,0.09});
+    float bearing_deg = get_bearing(AIRCRAFT_LAT, AIRCRAFT_LNG, VOR_LAT, VOR_LNG, AIRCRAFT_HEADING);
+    float bearing_rad = get_radians(bearing_deg - 92);
+
+    // Calculate the correct position along the compass radius
+    hdg_bug.setPosition(center + sf::Vector2f(
+        std::cos(bearing_rad) * compass_radius - 5,
+        std::sin(bearing_rad) * compass_radius - 5
+    ));
+
+    hdg_bug.setOrigin({compass_texture.getSize().x / 2.f, compass_texture.getSize().y / 2.f});
+    hdg_bug.setRotation(sf::degrees(get_bearing(AIRCRAFT_LAT, AIRCRAFT_LNG, VOR_LAT, VOR_LNG, AIRCRAFT_HEADING)));
+    compass_texture.draw(hdg_bug);
+
     float radius = 250.f;
     const int numMarks = 36;   // one every 10 degrees
     const std::size_t vertexCount = numMarks * 2;
@@ -157,7 +179,7 @@ int WinMain(){
         });
 
         float rad = get_radians(deg);
-        float dist = radius;
+        float dist = radius - 20.f;
         label.setPosition({
             center.x + std::cos(rad) * dist,
             center.y + std::sin(rad) * dist
@@ -192,6 +214,11 @@ int WinMain(){
 
                 AIRCRAFT_HEADING = AIRCRAFT_HEADING - 1; // decrease the heading
 
+                if (get_turn_angle(get_bearing(AIRCRAFT_LAT, AIRCRAFT_LNG, VOR_LAT, VOR_LNG, AIRCRAFT_HEADING), AIRCRAFT_HEADING) == 0){ // if the hdg arrow is pointing at the desired bearing
+                    heading_arrow.setFillColor(sf::Color::Green); // make arrow green
+                } else {
+                    heading_arrow.setFillColor(sf::Color::Black); // else make it black
+                }
                 current_heading.setString("HDG: " + to_string(AIRCRAFT_HEADING) + "\260"); // update current heading value.
                 turn_angle.setString("Turn: " + std::to_string(get_turn_angle(get_bearing(AIRCRAFT_LAT, AIRCRAFT_LNG, VOR_LAT, VOR_LNG, AIRCRAFT_HEADING), AIRCRAFT_HEADING)) + "\260"); // update the turn direction
                 hdg_left_text.setFillColor(sf::Color::Red); // when the button is pressed, set the arrow icon thing to red, to show that its being used
@@ -207,7 +234,14 @@ int WinMain(){
                 if (AIRCRAFT_HEADING == 360){ // if the heading is 360 or above, reset to 0 to avoid going too high like 380 degrees
                     AIRCRAFT_HEADING = 0;
                 }
+
                 AIRCRAFT_HEADING = AIRCRAFT_HEADING + 1; // increase the heading
+
+                if (get_turn_angle(get_bearing(AIRCRAFT_LAT, AIRCRAFT_LNG, VOR_LAT, VOR_LNG, AIRCRAFT_HEADING), AIRCRAFT_HEADING) == 0){ // if the hdg arrow is pointing at the desired bearing
+                    heading_arrow.setFillColor(sf::Color::Green); // make arrow green
+                } else {
+                    heading_arrow.setFillColor(sf::Color::Black); // else make it black
+                }
 
                 current_heading.setString("HDG: " + to_string(AIRCRAFT_HEADING) + "\260"); // update current heading value.
                 turn_angle.setString("Turn: " + std::to_string(get_turn_angle(get_bearing(AIRCRAFT_LAT, AIRCRAFT_LNG, VOR_LAT, VOR_LNG, AIRCRAFT_HEADING), AIRCRAFT_HEADING)) + "\260"); // update the turn direction
